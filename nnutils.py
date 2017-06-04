@@ -27,15 +27,34 @@ def fullyconnected(_x, _W, _b):
 #     return tf.nn.relu(fullyconnected(_x, _W, _b))
 
 
-def conv_bn_layer(input_tensor, input_dim, output_dim, is_train, layer_name):
+def conv_bn_layer(input_tensor, weights_shape, is_train, layer_name):
     # Adding a name scope ensures logical grouping of the layers in the graph.
     with tf.name_scope(layer_name):
         # This Variable will hold the state of the weights for the layer
         with tf.name_scope('weights'):
-            weights = weight_variable([input_dim, output_dim])
+            weights = weight_variable(weights_shape)
             variable_summaries(weights)
         with tf.name_scope('conv'):
             pre_norm = conv2d(input_tensor, weights)
+            tf.summary.histogram('pre_normalization', pre_norm)
+        with tf.name_scope('batch_norm'):
+            pre_activation = tf.layers.batch_normalization(pre_norm, training=is_train, updates_collections=None)
+            tf.summary.histogram('pre_activation', pre_activation)
+        with tf.name_scope('activation'):
+            activations = tf.nn.relu(pre_activation)
+            tf.summary.histogram('activations', activations)
+        return activations
+
+
+def fullyconnected_bn_layer(input_tensor, weights_shape, is_train, layer_name):
+    # Adding a name scope ensures logical grouping of the layers in the graph.
+    with tf.name_scope(layer_name):
+        # This Variable will hold the state of the weights for the layer
+        with tf.name_scope('weights'):
+            weights = weight_variable(weights_shape)
+            variable_summaries(weights)
+        with tf.name_scope('fully_connected'):
+            pre_norm = tf.matmul(input_tensor, weights)
             tf.summary.histogram('pre_normalization', pre_norm)
         with tf.name_scope('batch_norm'):
             pre_activation = tf.layers.batch_normalization(pre_norm, training=is_train, updates_collections=None)
