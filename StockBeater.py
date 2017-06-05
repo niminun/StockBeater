@@ -38,7 +38,7 @@ class StockBeater(object):
                 summary, loss = self.sess.run([self.merged, self.loss],
                                               feed_dict={self.observed_batch: observed_batch,
                                                          self.day_after_batch: day_after_batch,
-                                                         self.keep_prob: 1.0})
+                                                         self.is_train: True})
                 self.train_writer.add_summary(summary, t)
                 print("Train: t = {0}, mean train loss = {1}".format(t, loss))
 
@@ -47,18 +47,20 @@ class StockBeater(object):
                     print("Test: t = {0}".format(t))
                     self.test(t)
 
+                continue
+
             self.train_step.run(feed_dict={self.observed_batch: observed_batch,
                                            self.day_after_batch: day_after_batch,
-                                           self.keep_prob: 0.6})
+                                           self.is_train: True})
 
     def test(self, t):
         observed_batch, day_after_batch = self.data_manager.get_batch(self.params.test_batch_size, is_train=False)
         summary, loss, decision = self.sess.run([self.merged, self.loss, self.decision],
                                                 feed_dict={self.observed_batch: observed_batch,
                                                            self.day_after_batch: day_after_batch,
-                                                           self.keep_prob: 1.0})
+                                                           self.is_train: False})
         self.test_writer.add_summary(summary, t)
-        print("mean test loss = {0}, decision:\n{1}".format(loss, decision))
+        print("mean test loss = {0}".format(loss))
 
     def predict(self, date_to_predict):
         observed = self.data_manager.get_data_for_prediction(self.params.records_per_sample, date_to_predict,
@@ -95,46 +97,6 @@ class StockBeater(object):
         sz_after_convs = (in_height - k_conv1_shape[0] + 1 - k_conv2_shape[0] + 1) * \
                          (in_width - k_conv1_shape[1] + 1 - k_conv2_shape[1] + 1) * C2
 
-        # with tf.name_scope('conv1'):
-        #     with tf.name_scope('weights'):
-        #         W_conv1 = nnutils.weight_variable([k_conv1_shape[0], k_conv1_shape[1], 1, C1])
-        #         nnutils.variable_summaries(W_conv1)
-        #     with tf.name_scope('biases'):
-        #         b_conv1 = nnutils.bias_variable([C1])
-        #         nnutils.variable_summaries(b_conv1)
-        #
-        # with tf.name_scope('conv2'):
-        #     with tf.name_scope('weights'):
-        #         W_conv2 = nnutils.weight_variable([k_conv2_shape[0], k_conv2_shape[1], C1, C2])
-        #         nnutils.variable_summaries(W_conv2)
-        #     with tf.name_scope('biases'):
-        #         b_conv2 = nnutils.bias_variable([C2])
-        #         nnutils.variable_summaries(b_conv2)
-
-        # with tf.name_scope('fc1'):
-        #     with tf.name_scope('weights'):
-        #         W_fc1 = nnutils.weight_variable([sz_after_convs, FC1])
-        #         nnutils.variable_summaries(W_fc1)
-        #     with tf.name_scope('biases'):
-        #         b_fc1 = nnutils.bias_variable([FC1])
-        #         nnutils.variable_summaries(b_fc1)
-        #
-        # with tf.name_scope('fc2'):
-        #     with tf.name_scope('weights'):
-        #         W_fc2 = nnutils.weight_variable([FC1, FC2])
-        #         nnutils.variable_summaries(W_fc2)
-        #     with tf.name_scope('biases'):
-        #         b_fc2 = nnutils.bias_variable([FC2])
-        #         nnutils.variable_summaries(b_fc2)
-        #
-        # with tf.name_scope('fcfinal'):
-        #     with tf.name_scope('weights'):
-        #         W_fc3 = nnutils.weight_variable([FC2, out_len])
-        #         nnutils.variable_summaries(W_fc3)
-        #     with tf.name_scope('biases'):
-        #         b_fc3 = nnutils.bias_variable([out_len])
-        #         nnutils.variable_summaries(b_fc3)
-
 
         # prediction:
         # convolutions
@@ -167,7 +129,7 @@ class StockBeater(object):
 
         self.day_after_batch = tf.placeholder(dtype=tf.float32, shape=[None, in_height])
         last_observed = self.observed_batch[:, :, -1]
-        change_rate = (self.day_after_batch - last_observed) / last_observed  # for matmul
+        change_rate = (self.day_after_batch - last_observed) / last_observed
         _y = tf.argmax(change_rate, axis=-1)
         cross_entropy = tf.reduce_mean(tf.nn.sparse_softmax_cross_entropy_with_logits(labels=_y, logits=fc_final))
 

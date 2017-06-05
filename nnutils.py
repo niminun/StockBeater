@@ -38,7 +38,7 @@ def conv_bn_layer(input_tensor, weights_shape, is_train, layer_name):
             pre_norm = conv2d(input_tensor, weights)
             tf.summary.histogram('pre_normalization', pre_norm)
         with tf.name_scope('batch_norm'):
-            pre_activation = tf.layers.batch_normalization(pre_norm, training=is_train, updates_collections=None)
+            pre_activation = tf.layers.batch_normalization(pre_norm, training=is_train, momentum=0.999)
             tf.summary.histogram('pre_activation', pre_activation)
         with tf.name_scope('activation'):
             activations = tf.nn.relu(pre_activation)
@@ -57,7 +57,7 @@ def fullyconnected_bn_layer(input_tensor, weights_shape, is_train, layer_name):
             pre_norm = tf.matmul(input_tensor, weights)
             tf.summary.histogram('pre_normalization', pre_norm)
         with tf.name_scope('batch_norm'):
-            pre_activation = tf.layers.batch_normalization(pre_norm, training=is_train, updates_collections=None)
+            pre_activation = tf.layers.batch_normalization(pre_norm, training=is_train, momentum=0.999)
             tf.summary.histogram('pre_activation', pre_activation)
         with tf.name_scope('activation'):
             activations = tf.nn.relu(pre_activation)

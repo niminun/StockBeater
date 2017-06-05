@@ -15,8 +15,8 @@ class BeaterParams(object):
         self.train_batch_size = 32
         self.test_batch_size = 256
         self.num_iters = 50001
-        self.lmbda = 1e-8  # regularization coefficient
-        self.learning_rate = 1e-3
+        self.lmbda = 1e-3  # regularization coefficient
+        self.learning_rate = 1e-4
         self.summaries_dir = "./conf2/"
 
         if not os.path.exists(self.summaries_dir):
