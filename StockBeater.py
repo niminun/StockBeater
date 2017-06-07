@@ -63,10 +63,9 @@ class StockBeater(object):
         print("mean test loss = {0}".format(loss))
 
     def predict(self, date_to_predict):
-        observed = self.data_manager.get_data_for_prediction(self.params.records_per_sample, date_to_predict,
-                                                             self.params.fetch_data_for_prediction)
+        observed = self.data_manager.get_data_for_prediction(date_to_predict, self.params.fetch_data_for_prediction)
         self.saver.restore(self.sess, self.params.use_model)
-        prediction = self.decision.eval(feed_dict={self.observed_batch: observed, self.keep_prob: 1.0})
+        prediction = self.decision.eval(feed_dict={self.observed_batch: observed, self.is_train: False})
         return prediction
 
     def init_nn_model(self):

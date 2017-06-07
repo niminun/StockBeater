@@ -20,7 +20,13 @@ if __name__ == '__main__':
     else:
         pred = beater.predict(datetime.date.today()).flatten()
         print(pred)
-        sym = beater.data_manager.used_symbols[np.where(pred != 0)]
-        print(sym)
+        temp = np.argpartition(-pred, 5)
+        best_idx = temp[:5]
+        best_symbols = beater.data_manager.used_symbols[best_idx]
+        best_vals = pred[best_idx]
+
+        print("Best possibilities are:")
+        for i in range(5):
+            print("{0}: {1}".format(best_symbols[i], best_vals[i]))
 
 

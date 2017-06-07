@@ -4,13 +4,13 @@ class BeaterParams(object):
 
     def __init__(self):
 
-        self.do_learn = True
-        self.use_model = None
+        self.do_learn = False
+        self.use_model = "snapshots/2017-06-06_45000"
         self.option = "Adj Close"
         self.train_set_ratio = 0.8
         self.records_per_sample = 30
         self.fetch_data = False
-        self.fetch_data_for_prediction = False
+        self.fetch_data_for_prediction = True
         self.first_year = 1996
         self.train_batch_size = 32
         self.test_batch_size = 256

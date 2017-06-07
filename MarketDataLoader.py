@@ -38,16 +38,18 @@ class MarketDataLoader(object):
     def get_batch(self, batch_size, is_train):
         return self._generate_batch(batch_size, is_train)
 
-    def get_data_for_prediction(self, num_records, date_to_predict, fetch_new=True):
+    def get_data_for_prediction(self, date_to_predict, fetch_new=True):
         dump_file_path = "./" + self._generate_file_name(self.option) + "_pred.npy"
         if fetch_new:
             # taking some extra days prior to make sure we have at least num_records records.
-            start_date = date_to_predict - datetime.timedelta(days=num_records * 2)
+            start_date = date_to_predict - datetime.timedelta(days=self.records_per_sample * 2)
             end_date = date_to_predict - datetime.timedelta(days=1)
             data = self._fetch_data(start_date, end_date)
             relevant_data = data.loc[:, self.used_symbols]
-            observed = relevant_data.values[-num_records:, ].T
-            observed[np.isnan(observed)] = 1.0
+            observed = relevant_data.values[-self.records_per_sample:, ].T
+            nan_idx = np.isnan(observed)
+            if True in nan_idx:
+                observed[np.isnan(observed)] = 1.0
             self.data_for_prediction = observed
             # dumping
             np.save(dump_file_path, self.data_for_prediction)
@@ -83,7 +85,11 @@ class MarketDataLoader(object):
                 relevant_data.rename(columns={self.option: symbol}, inplace=True)
             except Exception:
                 print('failed')
-                continue
+                if data is None:
+                    return
+                date_list = data.index.values
+                relevant_data = pd.DataFrame(np.zeros((len(date_list), 1)),
+                                             index=date_list, columns=[symbol])
             if data is None:
                 data = relevant_data
             else:
