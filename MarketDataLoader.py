@@ -76,24 +76,28 @@ class MarketDataLoader(object):
     def _fetch_data(self, start_date, end_date):
         num_symbols = len(self.symbols)
         data = None
-        for i in range(0, num_symbols):
+        i = 0
+        while i < num_symbols:
             symbol = self.symbols[i]
-            print("loading {0}\{1}: {2}".format(i, num_symbols, symbol))
+            print("loading {0}\{1}: {2}".format(i + 1, num_symbols, symbol))
             try:
                 stock_data = fetch.DataReader(symbol, 'yahoo', start_date, end_date)
                 relevant_data = stock_data[self.option].to_frame()
                 relevant_data.rename(columns={self.option: symbol}, inplace=True)
-            except Exception:
-                print('failed')
                 if data is None:
-                    return
-                date_list = data.index.values
-                relevant_data = pd.DataFrame(np.zeros((len(date_list), 1)),
-                                             index=date_list, columns=[symbol])
-            if data is None:
-                data = relevant_data
-            else:
-                data = data.merge(relevant_data, how='outer', left_index=True, right_index=True, sort=True)
+                    data = relevant_data
+                else:
+                    data = data.merge(relevant_data, how='outer', left_index=True, right_index=True, sort=True)
+                i += 1
+            except Exception:
+                print("failed, trying again.")
+                pass
+                # if data is None:
+                #     return
+                # date_list = data.index.values
+                # relevant_data = pd.DataFrame(np.zeros((len(date_list), 1)),
+                #                              index=date_list, columns=[symbol])
+
         return data
 
     def _load_all_data(self):
