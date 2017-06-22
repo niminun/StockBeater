@@ -1,4 +1,4 @@
-import StockBeater2
+import StockBeater as sb
 import sys
 import datetime
 import numpy as np
@@ -16,7 +16,7 @@ if __name__ == '__main__':
         exec(f.read(), globals())
         params = BeaterParams()  # The name of the configuration class
 
-    beater = StockBeater2.StockBeater(params)
+    beater = sb.StockBeater(params)
     if params.do_learn:
         beater.learn()
     else:
