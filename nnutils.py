@@ -15,16 +15,40 @@ def conv2d(_x, _W):
     return tf.nn.conv2d(_x, _W, strides=[1, 1, 1, 1], padding='VALID')
 
 
-# def conv_relu(_x, _W, _b):
-#     return tf.nn.relu(conv2d(_x, _W) + _b)
-
-
 def fullyconnected(_x, _W, _b):
     return tf.matmul(_x, _W) + _b
 
 
-# def fullyconncted_relu(_x, _W, _b):
-#     return tf.nn.relu(fullyconnected(_x, _W, _b))
+def conv_layer(input_tensor, weights_shape, layer_name):
+    # Adding a name scope ensures logical grouping of the layers in the graph.
+    with tf.name_scope(layer_name):
+        # This Variable will hold the state of the weights for the layer
+        with tf.name_scope('weights'):
+            weights = weight_variable(weights_shape)
+            variable_summaries(weights)
+        with tf.name_scope('conv'):
+            pre_activation = conv2d(input_tensor, weights)
+            tf.summary.histogram('pre_activation', pre_activation)
+        with tf.name_scope('activation'):
+            activations = tf.nn.relu(pre_activation)
+            tf.summary.histogram('activations', activations)
+        return activations
+
+
+def fullyconnected_layer(input_tensor, weights_shape, layer_name):
+    # Adding a name scope ensures logical grouping of the layers in the graph.
+    with tf.name_scope(layer_name):
+        # This Variable will hold the state of the weights for the layer
+        with tf.name_scope('weights'):
+            weights = weight_variable(weights_shape)
+            variable_summaries(weights)
+        with tf.name_scope('fully_connected'):
+            pre_activation = tf.matmul(input_tensor, weights)
+            tf.summary.histogram('pre_activation', pre_activation)
+        with tf.name_scope('activation'):
+            activations = tf.nn.relu(pre_activation)
+            tf.summary.histogram('activations', activations)
+        return activations
 
 
 def conv_bn_layer(input_tensor, weights_shape, is_train, layer_name):

@@ -5,7 +5,7 @@ class BeaterParams(object):
     def __init__(self):
 
         self.do_learn = False
-        self.use_model = "snapshots/2017-06-06_45000"
+        self.use_model = "../../StocksBeater_backups/BatchNormalized_20170605/snapshots/2017-06-06_40000"
         self.option = "Adj Close"
         self.train_set_ratio = 0.8
         self.records_per_sample = 30

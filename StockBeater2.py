@@ -38,7 +38,7 @@ class StockBeater(object):
                 summary, loss = self.sess.run([self.merged, self.loss],
                                               feed_dict={self.observed_batch: observed_batch,
                                                          self.day_after_batch: day_after_batch,
-                                                         self.keep_prob: 1.0})
+                                                         self.is_train: True})
                 self.train_writer.add_summary(summary, t)
                 print("Train: t = {0}, mean train loss = {1}".format(t, loss))
 
@@ -51,21 +51,21 @@ class StockBeater(object):
 
             self.train_step.run(feed_dict={self.observed_batch: observed_batch,
                                            self.day_after_batch: day_after_batch,
-                                           self.keep_prob: 0.6})
+                                           self.is_train: True})
 
     def test(self, t):
         observed_batch, day_after_batch = self.data_manager.get_batch(self.params.test_batch_size, is_train=False)
         summary, loss, decision = self.sess.run([self.merged, self.loss, self.decision],
                                                 feed_dict={self.observed_batch: observed_batch,
                                                            self.day_after_batch: day_after_batch,
-                                                           self.keep_prob: 1.0})
+                                                           self.is_train: False})
         self.test_writer.add_summary(summary, t)
         print("mean test loss = {0}".format(loss))
 
     def predict(self, date_to_predict):
         observed = self.data_manager.get_data_for_prediction(date_to_predict, self.params.fetch_data_for_prediction)
         self.saver.restore(self.sess, self.params.use_model)
-        prediction = self.decision.eval(feed_dict={self.observed_batch: observed, self.keep_prob: 1.0})
+        prediction = self.decision.eval(feed_dict={self.observed_batch: observed, self.is_train: False})
         return prediction
 
     def init_nn_model(self):
@@ -99,22 +99,27 @@ class StockBeater(object):
 
         # prediction:
         # convolutions
-        conv1_out = nnutils.conv_layer(x, [k_conv1_shape[0], k_conv1_shape[1], 1, C1], "conv_1")
+        conv1_out = nnutils.conv_bn_layer(x,
+                                          [k_conv1_shape[0], k_conv1_shape[1], 1, C1],
+                                          self.is_train, "conv_1")
 
-        conv2_out = nnutils.conv_layer(conv1_out, [k_conv2_shape[0], k_conv2_shape[1], C1, C2], "conv_2")
+        conv2_out = nnutils.conv_bn_layer(conv1_out,
+                                          [k_conv2_shape[0], k_conv2_shape[1], C1, C2],
+                                          self.is_train, "conv_2")
 
         # fully-connected
-        self.keep_prob = tf.placeholder(tf.float32)
+        conv2_flat = tf.reshape(conv2_out, [-1, sz_after_convs])
+        fc1_out = nnutils.fullyconnected_bn_layer(conv2_flat,
+                                                  [sz_after_convs, FC1],
+                                                  self.is_train, "fully_connected_1")
 
-        conv2_out_flat = tf.reshape(conv2_out, [-1, sz_after_convs])
-        conv2_out_drop = tf.nn.dropout(conv2_out_flat, self.keep_prob)
-        fc1_out = nnutils.fullyconnected_layer(conv2_out_drop, [sz_after_convs, FC1], "fully_connected_1")
+        fc2_out = nnutils.fullyconnected_bn_layer(fc1_out,
+                                                  [FC1, FC2],
+                                                  self.is_train, "fully_connected_2")
 
-        fc1_out_drop = tf.nn.dropout(fc1_out, self.keep_prob)
-        fc2_out = nnutils.fullyconnected_layer(fc1_out_drop, [FC1, FC2], "fully_connected_2")
-
-        fc2_out_drop = tf.nn.dropout(fc2_out, self.keep_prob)
-        fc_final = nnutils.fullyconnected_layer(fc2_out_drop, [FC2, out_len], "fully_connected_final")
+        fc_final = nnutils.fullyconnected_bn_layer(fc2_out,
+                                                   [FC2, out_len],
+                                                   self.is_train, "fully_connected_final")
 
         # train step
         with tf.name_scope('decision'):
